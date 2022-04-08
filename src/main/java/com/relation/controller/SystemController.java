@@ -20,6 +20,7 @@ public class SystemController {
     private SystemService systemService;
 
     @GetMapping("findBySystemList")
+    @CrossOrigin
     public ResultUtil findBySystemList(){
         List<String> systemList = systemService.findBySystemList();
         return ResultUtil.success("查询成功",systemList);
