@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.relation.dao.TagChangeLogMapper">
+    <insert id="syncTagChangeLog">
+        insert into tag_change_log (`flag_id`,`tab_col_id`,`tab_col_name`,`source`,`context_path`,`tag`,`data_type`,`status`,`tag_type`,`operator`,`create_time`)
+        select
+        a.id as flag_id,a.object_id as tab_col_id,b.physical_table as tab_col_name,
+        d.ds_name as source,b.context_path,c.tag_value_name as tag,1 as data_type,
+        '新增' as status,'待确认' as tag_type,'system' as operator,now() as create_time
+        from vw_object_tag_relation a
+        left join md_table b on a.object_id = b.id
+        left join vw_tag c on a.tag_domain_id=c.tag_value_id
+        left join md_datasource d on b.datasourceId=d.id
+        left join tag_change_log log on log.flag_id = a.id
+        where log.id is null;
+
+        insert into tag_change_log (`flag_id`,`tab_col_id`,`tab_col_name`,`source`,`context_path`,`tag`,`data_type`,`status`,`tag_type`,`operator`,`create_time`)
+        select
+        a.id as flag_id,a.col_id as tab_col_id,a.col as tab_col_name,
+        d.ds_name as source,b.context_path,a.tag as tag,2 as data_type,
+        '新增' as status,'待确认' as tag_type,'system' as operator,now() as create_time
+        from vw_object_tag_relation_column a
+        left join md_table b on a.table_id = b.id
+        left join md_datasource d on b.datasourceId=d.id
+        left join tag_change_log log on log.flag_id = CAST(a.id AS CHAR(50))
+        where log.id is null;
+    </insert>
+</mapper>

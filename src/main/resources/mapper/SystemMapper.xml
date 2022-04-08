@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.relation.dao.SystemMapper">
+
+
+    <!--1-->
+    <select id="findBySystemList" resultType="java.lang.String">
+        select
+        SUBSTRING_INDEX(md.context_path,'/',-1) as 'systemName'
+        from  md_datasource md
+        group by SUBSTRING_INDEX(md.context_path,'/',-1);
+    </select>
+    <!--2-->
+    <select id="findBySystemType" resultType="com.relation.pojo.ov.SystemType">
+        select b.系统名称 as systemName,c.总表数 as tableNum,b.标签名称 as tagName,b.标签数量 as tagNum,(b.标签数量/c.总表数) as 'proPortion'
+        from (
+        select SUBSTRING_INDEX(md.context_path,'/',-1) as '系统名称',a.tag_value_name as '标签名称',count(*) as '标签数量'
+        from md_table mt left join md_datasource md
+        on mt.datasourceId = md.id
+        inner join (
+        select votr.object_id,vt.tag_value_name
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name not in ('公司内部','公司受限','公司机密','公司公开')
+        )a on mt.id = a.object_id
+        group by 系统名称,标签名称
+        order by 系统名称,标签名称)b
+        inner join
+        (select SUBSTRING_INDEX(md.context_path,'/',-1) as '系统名称',count(mt.context_path) as '总表数'
+        from md_table mt left join md_datasource md
+        on mt.datasourceId = md.id
+        group by 系统名称
+        )c on b.系统名称 = c.系统名称
+        where b.系统名称 = #{systemName};
+    </select>
+    <!--3-->
+    <select id="findBySystemClass" resultType="com.relation.pojo.ov.SystemType">
+        select b.系统名称 as systemName,c.总表数 as tableNum,b.标签名称 as tagName,b.标签数量 as tagNum,(b.标签数量/c.总表数) as 'proPortion'
+        from (
+        select SUBSTRING_INDEX(md.context_path,'/',-1) as '系统名称',a.tag_value_name as '标签名称',count(*) as '标签数量'
+        from md_table mt left join md_datasource md
+        on mt.datasourceId = md.id
+        inner join (
+        select votr.object_id,vt.tag_value_name
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name in ('公司内部','公司受限','公司机密','公司公开')
+        )a on mt.id = a.object_id
+        group by 系统名称,标签名称
+        order by 系统名称,标签名称)b
+        inner join
+        (select SUBSTRING_INDEX(md.context_path,'/',-1) as '系统名称',count(mt.context_path) as '总表数'
+        from md_table mt left join md_datasource md
+        on mt.datasourceId = md.id
+        group by 系统名称
+        )c on b.系统名称 = c.系统名称
+        where b.系统名称 = #{systemName};
+    </select>
+    <!--4数据-->
+    <select id="findSystemTypeList" resultType="com.relation.pojo.ov.SystemClass">
+        select SUBSTRING_INDEX(md.context_path,'/',-1) as 'systemName',
+        SUBSTRING_INDEX(mt.context_path,'/',1) as 'dataSource',
+        mt.physical_db as 'libraryName',
+        mt.physical_table as 'tableEng',
+        mt.table_desc as 'tableChi',
+        c.tag_fenji as 'tagClass',
+        c.tag_fenlei as 'tagType'
+        from md_table mt left join md_datasource md
+        on mt.datasourceId = md.id
+        left join
+        (
+        SELECT b.object_id,a.tag_fenji,b.tag_fenlei
+        from
+        (select votr.object_id,vt.tag_value_name as tag_fenlei
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name NOT in ('公司内部','公司受限','公司机密','公司公开')
+        group by votr.object_id)b
+        left join
+        (select votr.object_id,vt.tag_value_name as tag_fenji
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name in ('公司内部','公司受限','公司机密','公司公开')
+        group by votr.object_id)a
+        on a.object_id = b.object_id)c
+        on mt.id = c.object_id
+        WHERE	c.tag_fenlei =#{name}
+        and SUBSTRING_INDEX(md.context_path,'/',-1)=#{systemName}
+
+        limit #{page},#{count};
+    </select>
+
+    <!--4条数-->
+    <select id="findSystemTypeListCount" resultType="java.lang.Integer">
+        select count(*)
+        from md_table mt left join md_datasource md
+        on mt.datasourceId = md.id
+        left join
+        (
+        SELECT b.object_id,a.tag_fenji,b.tag_fenlei
+        from
+        (select votr.object_id,vt.tag_value_name as tag_fenlei
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name NOT in ('公司内部','公司受限','公司机密','公司公开')
+        group by votr.object_id)b
+        left join
+        (select votr.object_id,vt.tag_value_name as tag_fenji
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name in ('公司内部','公司受限','公司机密','公司公开')
+        group by votr.object_id)a
+        on a.object_id = b.object_id)c
+        on mt.id = c.object_id
+        WHERE	c.tag_fenlei =#{name}
+        and SUBSTRING_INDEX(md.context_path,'/',-1)=#{systemName}
+
+    </select>
+
+    <!--5数据-->
+    <select id="findSystemClassList" resultType="com.relation.pojo.ov.SystemClass">
+        select SUBSTRING_INDEX(md.context_path,'/',-1) as 'systemName',
+        SUBSTRING_INDEX(mt.context_path,'/',1) as 'dataSource',
+        mt.physical_db as 'libraryName',
+        mt.physical_table as 'tableEng',
+        mt.table_desc as 'tableChi',
+        c.tag_fenji as 'tagClass',
+        c.tag_fenlei as 'tagType'
+        from md_table mt left join md_datasource md
+        on mt.datasourceId = md.id
+        left join
+        (SELECT a.object_id,a.tag_fenji,b.tag_fenlei
+        from
+        (select votr.object_id,vt.tag_value_name as tag_fenji
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name in ('公司内部','公司受限','公司机密','公司公开')
+        group by votr.object_id)a
+        left join
+        (select votr.object_id,vt.tag_value_name as tag_fenlei
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name NOT in ('公司内部','公司受限','公司机密','公司公开')
+        group by votr.object_id) b
+        on a.object_id = b.object_id) c
+        on mt.id = c.object_id
+        WHERE	c.tag_fenji =#{name}
+        and SUBSTRING_INDEX(md.context_path,'/',-1)=#{systemName}
+
+        limit #{page},#{count};
+    </select>
+
+    <!--5条数-->
+    <select id="findSystemClassListCount" resultType="java.lang.Integer">
+        select count(*)
+        from md_table mt left join md_datasource md
+        on mt.datasourceId = md.id
+        left join
+        (SELECT a.object_id,a.tag_fenji,b.tag_fenlei
+        from
+        (select votr.object_id,vt.tag_value_name as tag_fenji
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name in ('公司内部','公司受限','公司机密','公司公开')
+        group by votr.object_id)a
+        left join
+        (select votr.object_id,vt.tag_value_name as tag_fenlei
+        from vw_object_tag_relation votr left join vw_tag vt
+        on votr.tag_domain_id = vt.tag_value_id
+        where vt.tag_value_name NOT in ('公司内部','公司受限','公司机密','公司公开')
+        group by votr.object_id) b
+        on a.object_id = b.object_id) c
+        on mt.id = c.object_id
+        WHERE	c.tag_fenji =#{name}
+        and SUBSTRING_INDEX(md.context_path,'/',-1)=#{systemName}
+
+    </select>
+
+</mapper>

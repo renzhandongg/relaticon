@@ -1,0 +1,21 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: relation_log
+server:
+  port: 8081
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*Mapper.xml
+  #实体类对应
+  typeAliasesPackage: com.relation.pojo
+  #mybatis-plus执行语句打印
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+
+### 设置日志级别 ###
+logging:
+  level:
+    root: info

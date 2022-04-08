@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.relation.dao.PhpMapper">
+
+    <select id="searchSourceInfo" parameterType="java.util.Map" resultType="com.relation.pojo.dto.SourceInfoDto">
+        SELECT
+        a.physical_table as 'tableName',
+        a.context_path as 'path',
+        a.tag_value_name as 'gradedLabel',
+        b.tag_value_name as 'ClassificationLabel',
+        CONCAT(a.create_date,'/',b.create_date) as 'createDate'
+        from
+        (
+            SELECT
+            mt.id,
+            mt.physical_table,
+            mt.context_path,
+            vt.tag_value_name,
+            votr.create_date
+            FROM md_table mt
+            left join vw_object_tag_relation votr on votr.object_id = mt.id
+            left join vw_tag vt on votr.tag_domain_id = vt.tag_value_id
+            where mt.context_path like #{source}
+            and votr.tag_domain_id in ('d6ddfbaca9014b07a0036ad9d69917d9','403ab98636094f528c95d278cc084130','d291ae84d24b422c972543ceb24a8225','2d7b8f1708ca4dc585e4d26a351ab34f')
+        ) a
+        inner join
+        (
+            SELECT mt.id,
+            vt.tag_value_name,
+            votr.create_date
+            FROM md_table mt
+            left join vw_object_tag_relation votr on votr.object_id = mt.id
+            left join vw_tag vt on votr.tag_domain_id = vt.tag_value_id
+            where mt.context_path like #{source}
+            and votr.tag_domain_id not in ('434fc2f689fd44e1b74e484055ef406b','d6ddfbaca9014b07a0036ad9d69917d9','403ab98636094f528c95d278cc084130','d291ae84d24b422c972543ceb24a8225','2d7b8f1708ca4dc585e4d26a351ab34f')
+        ) b
+        on a.id = b.id
+    </select>
+
+    <select id="searchSourceClass" resultType="com.relation.pojo.dto.SoruceClassDto">
+        SELECT
+        SUM(CASE a.tag_domain_id when 'd6ddfbaca9014b07a0036ad9d69917d9' then 1 else 0 end)/COUNT(DISTINCT a.context_path) 'companyDisclosure',
+        SUM(CASE a.tag_domain_id when '2d7b8f1708ca4dc585e4d26a351ab34f' then 1 else 0 end)/COUNT(DISTINCT a.context_path) 'companyInside',
+        SUM(CASE a.tag_domain_id when '403ab98636094f528c95d278cc084130' then 1 else 0 end)/COUNT(DISTINCT a.context_path) 'companyLimited',
+        SUM(CASE a.tag_domain_id when 'd291ae84d24b422c972543ceb24a8225' then 1 else 0 end)/COUNT(DISTINCT a.context_path) 'companySecrets'
+        from(
+        SELECT votr.tag_domain_id,mt.context_path
+        from md_table mt
+        left join vw_object_tag_relation votr on mt.id = votr.object_id
+        where mt.context_path like #{contextPath}
+        ) a
+    </select>
+</mapper>
